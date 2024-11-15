@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "perfil_investigador")
-public class PerfilInvestigador {
+public class ResearcherProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,22 +15,22 @@ public class PerfilInvestigador {
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true, nullable = false)
-    private Usuario usuario;
+    private User user;
 
     @Column(name = "institucion")
-    private String institucion;
+    private String institution;
 
     @Column(name = "grado_academico")
-    private String gradoAcademico;
+    private String academicDegree;
 
     @Column(name = "area_investigacion")
-    private String areaInvestigacion;
+    private String researchArea;
 
     @Column(name = "descripcion")
-    private String descripcion;
+    private String description;
 
     @Column(name = "intereses")
-    private String intereses;
+    private String interests;
 
 
 

@@ -6,20 +6,20 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PerfilEstudianteDTO {
+public class ResearcherProfileDTO {
 
     private Long id;
 
     @NotNull
-    private Long usuarioId;
+    private Long userId;
 
-    private String institucion;
+    private String institution;
 
-    private String carrera;
+    private String academicDegree;
 
-    private String semestre;
+    private String researchArea;
 
-    private String descripcion;
+    private String description;
 
     private String intereses;
 }

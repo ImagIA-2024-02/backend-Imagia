@@ -1,6 +1,5 @@
 package com.acme.backendimagia.application.dto;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -8,25 +7,25 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ObraDeArteDTO {
+public class ArtworkDTO {
     private Long id;
 
     @NotNull
     @Size(min=4, max = 100)
-    private String autor;
+    private String author;
 
     @Size(min=4, max = 100)
-    private String nombre;
+    private String name;
 
     @Size(min=4, max = 100)
-    private String epoca;
+    private String epoch;
 
     @Size(min=4, max = 100)
-    private String descripcion;
+    private String description;
 
     @Size(min=4, max = 100)
     private String img;
 
     @NotNull
-    private Long usuarioId;
+    private Long userId;
 }

@@ -2,6 +2,6 @@ package com.acme.backendimagia.domain.model;
 
 import lombok.Getter;
 @Getter
-public enum TipoUsuario {
+public enum UserType {
 CIUDADANO, INVESTIGADOR,    ESTUDIANTE
 }

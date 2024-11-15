@@ -10,46 +10,46 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "usuarios")
-public class Usuario {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)
-    private String nombre;
+    private String firstName;
     @Column(nullable = false, length = 100)
-    private String apellido;
+    private String lastName;
     @Column(unique = true, nullable = false)
     private String email;
 
     @Column(length = 20)
-    private String telefono;
+    private String phone;
 
     @Column(nullable = false)
     private String password;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TipoUsuario tipoUsuario;
+    private UserType userType;
 
     @Column(nullable = false)
-    private LocalDateTime creadoEn;
+    private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    private LocalDateTime actualizadoEn;
+    private LocalDateTime updatedAt;
 
     @Column(nullable = false)
-    private Boolean activo;
+    private Boolean active;
 
 
     @PrePersist
     protected void onCreate() {
-        this.creadoEn = LocalDateTime.now();
-        this.actualizadoEn = LocalDateTime.now();
-        this.activo = true;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.active = true;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.actualizadoEn = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

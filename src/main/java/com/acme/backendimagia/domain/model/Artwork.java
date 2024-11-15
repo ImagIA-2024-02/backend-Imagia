@@ -1,7 +1,6 @@
 package com.acme.backendimagia.domain.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,28 +8,28 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "obras_de_arte")
-public class ObraDeArte {
+public class Artwork {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)
-    private String autor;
+    private String author;
 
     @Column(length = 100)
-    private String nombre;
+    private String name;
 
     @Column(length = 100)
-    private String epoca;
+    private String epoch;
 
     @Column
-    private String descripcion;
+    private String description;
 
     @Column(nullable = false)
     private String img;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    private User user;
 
 }

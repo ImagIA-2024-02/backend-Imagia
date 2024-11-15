@@ -6,34 +6,32 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
-public class UsuarioDTO {
+public class UserDTO {
 
     private Long id;
 
     @NotNull
     @Size(min = 3, max = 50)
-    private String nombre;
+    private String firstName;
 
     @NotNull
     @Size(min = 3, max = 50)
-    private String apellido;
+    private String lastName;
 
     @NotNull
     @Email
     private String email;
 
     @Size(min = 10, max = 20)
-    private String telefono;
+    private String phone;
 
     @NotNull
     @Size(min = 3, max = 50)
     private String password;
 
     @NotNull(message = "El tipo de usuario es obligatorio")
-    private String tipoUsuario;
+    private String userType;
 
 }

@@ -5,18 +5,18 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PerfilCiudadanoDTO {
+public class CitizenProfileDTO {
 
     private Long id;
 
     @NotNull
-    private Long usuarioId;
+    private Long userId;
 
-    private String tipoDeArte;
+    private String artType;
 
-    private String descripcion;
+    private String description;
 
-    private String intereses;
+    private String interests;
 
-    private String obrasFavoritas;
+    private String savedArtworks;
 }
