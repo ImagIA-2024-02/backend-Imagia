@@ -15,29 +15,29 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String firstName;
-    @Column(nullable = false, length = 100)
+    @Column(name = "apellido", nullable = false, length = 100)
     private String lastName;
-    @Column(unique = true, nullable = false)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(length = 20)
+    @Column(name = "telefono", length = 20)
     private String phone;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "tipo_usuario", nullable = false)
     private UserType userType;
 
-    @Column(nullable = false)
+    @Column(name = "creado_en", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "actualizado_en", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(nullable = false)
+    @Column(name = "activo", nullable = false)
     private Boolean active;
 
 

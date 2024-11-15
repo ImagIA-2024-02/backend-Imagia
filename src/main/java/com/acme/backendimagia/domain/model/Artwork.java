@@ -13,19 +13,19 @@ public class Artwork {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "autor", nullable = false, length = 100)
     private String author;
 
-    @Column(length = 100)
+    @Column(name = "nombre", length = 100)
     private String name;
 
-    @Column(length = 100)
+    @Column(name = "epoca", length = 100)
     private String epoch;
 
-    @Column
+    @Column(name = "descripcion")
     private String description;
 
-    @Column(nullable = false)
+    @Column(name = "img", nullable = false)
     private String img;
 
     @ManyToOne
