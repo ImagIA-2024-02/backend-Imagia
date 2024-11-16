@@ -6,12 +6,13 @@ import com.acme.backendimagia.application.dto.ResearcherProfileDTO;
 import com.acme.backendimagia.application.dto.UserDTO;
 import com.acme.backendimagia.application.user_management.CitizenProfileService;
 import com.acme.backendimagia.application.user_management.StudentProfileService;
-import com.acme.backendimagia.application.user_management.PerfilInvestigadorService;
+import com.acme.backendimagia.application.user_management.ResearcherProfileService;
 import com.acme.backendimagia.application.user_management.UserService;
 import com.acme.backendimagia.infraestructure.rest.dto.AuthResponse;
 import com.acme.backendimagia.infraestructure.rest.dto.LoginRequest;
 import com.acme.backendimagia.infraestructure.rest.dto.RegisterRequest;
 import com.acme.backendimagia.interfaces.persistence.exception.NotFoundException;
+import com.acme.backendimagia.shared.exception.BusinessExceptions;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ public class UserController {
         private CitizenProfileService citizenProfileService;
 
        @Autowired
-        PerfilInvestigadorService perfilInvestigadorService;
+       ResearcherProfileService researcherProfileService;
 
     // Registro de un nuevo usuario (ciudadano, estudiante, investigador)
      @PostMapping("/registro")
@@ -50,39 +51,36 @@ public class UserController {
          UserDTO registeredUser = userService.registerUser(userDTO);
 
          // verificar si el usuario fue guardado correctamente
+         if (registeredUser == null || registeredUser.getId() == null) {
+             throw new BusinessExceptions.BadRequestException("Error al registrar el usuario");
+         }
 
-            if (registeredUser == null || registeredUser.getId() == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "Error al registrar el usuario"));
-            }
+         // Crear el perfil correspondiente según el tipo de usuario
+         switch (registeredUser.getUserType()) {
+             case "CIUDADANO":
+                 CitizenProfileDTO citizenProfile = new CitizenProfileDTO();
+                 citizenProfile.setUserId(registeredUser.getId());
+                 citizenProfileService.createCitizenProfile(citizenProfile);
+                 break;
+             case "ESTUDIANTE":
+                 StudentProfileDTO studentProfile = new StudentProfileDTO();
+                 studentProfile.setUserId(registeredUser.getId());
+                 studentProfileService.createStudentProfile(studentProfile);
+                 break;
+             case "INVESTIGADOR":
+                 ResearcherProfileDTO researcherProfile = new ResearcherProfileDTO();
+                 researcherProfile.setUserId(registeredUser.getId());
+                 researcherProfileService.createResearcherProfile(researcherProfile);
+                 break;
+             default:
+                 throw new BusinessExceptions.BadRequestException("Tipo de usuario inválido");
+         }
 
-         // Si el tipo de usuario es Ciudadano, Estudiante o Investigador, se crea el perfil correspondiente
-
-            if (registeredUser.getUserType().equals("CIUDADANO")) {
-                CitizenProfileDTO citizenProfile = new CitizenProfileDTO();
-                citizenProfile.setUserId(registeredUser.getId());
-                citizenProfileService.createCitizenProfile(citizenProfile);
-            }
-            else if (registeredUser.getUserType().equals("ESTUDIANTE")) {
-                StudentProfileDTO studentProfile = new StudentProfileDTO();
-                studentProfile.setUserId(registeredUser.getId());
-                studentProfileService.createStudentProfile(studentProfile);
-
-
-            } else if (registeredUser.getUserType().equals("INVESTIGADOR")) {
-                ResearcherProfileDTO researcherProfile = new ResearcherProfileDTO();
-                researcherProfile.setUserId(registeredUser.getId());
-                perfilInvestigadorService.crearPerfilInvestigador(researcherProfile);
-            }
-
-         // Crear un mapa con los datos que se devolverán como respuesta JSON
-
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("message", "Usuario registrado correctamente");
-            response.put("users", registeredUser);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-            }
+         HashMap<String, Object> response = new HashMap<>();
+         response.put("message", "Usuario registrado correctamente");
+         response.put("users", registeredUser);
+         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+     }
 
         // Eliminar un usuario
         @DeleteMapping("/{id}")
@@ -134,7 +132,7 @@ public class UserController {
     // obtener el perfil de investigador por su ID de usuario
     @GetMapping("/perfil-investigador/{usuarioId}")
     public ResponseEntity<ResearcherProfileDTO> getResearcherProfile(@PathVariable Long usuarioId) {
-        ResearcherProfileDTO researcherProfile = perfilInvestigadorService.obtenerPerfilPorUsuarioId(usuarioId);
+        ResearcherProfileDTO researcherProfile = researcherProfileService.getProfileByID(usuarioId);
         return ResponseEntity.ok(researcherProfile);
     }
 
@@ -143,7 +141,7 @@ public class UserController {
     @PutMapping("/perfil-investigador/{usuarioId}")
     public ResponseEntity<HashMap<String, Object>> updateResearcherProfile(@PathVariable Long usuarioId, @RequestBody ResearcherProfileDTO researcherProfileDTO) {
         researcherProfileDTO.setUserId(usuarioId);
-        perfilInvestigadorService.actualizarPerfil(researcherProfileDTO);
+        researcherProfileService.updateProfile(researcherProfileDTO);
         HashMap<String, Object> response = new HashMap<>();
         response.put("message", "Perfil de investigador actualizado correctamente");
         return ResponseEntity.ok(response);
@@ -152,95 +150,57 @@ public class UserController {
     // obtener perfil completo de un usuario (ciudadano, estudiante, investigador)
     @GetMapping("/perfil-completo-ciudadano/{usuarioId}")
     public ResponseEntity<HashMap<String, Object>> getCompleteCitizenProfile(@PathVariable Long usuarioId) {
-        try {
-            UserDTO userDTO = userService.getUserById(usuarioId);
-            CitizenProfileDTO citizenProfile = citizenProfileService.getProfileByUserId(usuarioId);
+        UserDTO userDTO = userService.getUserById(usuarioId);
+        CitizenProfileDTO citizenProfile = citizenProfileService.getProfileByUserId(usuarioId);
 
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("email", userDTO.getEmail());
-            response.put("nombre", userDTO.getFirstName());
-            response.put("apellido", userDTO.getLastName());
-            response.put("telefono", userDTO.getPhone());
-            response.put("descripcion", citizenProfile.getDescription());
-            response.put("intereses", citizenProfile.getInterests());
-            response.put("obras_favoritas", citizenProfile.getSavedArtworks());
-            response.put("tipo_de_arte", citizenProfile.getArtType());
-            return ResponseEntity.ok(response);
-
-        } catch (NotFoundException e) {
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("mensaje", "Usuario o perfil no encontrado");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        } catch (Exception e) {
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("mensaje", "Error al obtener el perfil del usuario");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-
-
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("email", userDTO.getEmail());
+        response.put("nombre", userDTO.getFirstName());
+        response.put("apellido", userDTO.getLastName());
+        response.put("telefono", userDTO.getPhone());
+        response.put("descripcion", citizenProfile.getDescription());
+        response.put("intereses", citizenProfile.getInterests());
+        response.put("obras_favoritas", citizenProfile.getSavedArtworks());
+        response.put("tipo_de_arte", citizenProfile.getArtType());
+        return ResponseEntity.ok(response);
     }
 
     // obtener perfil completo de un usuario (ciudadano, estudiante, investigador)
     @GetMapping("/perfil-completo-estudiante/{usuarioId}")
     public ResponseEntity<HashMap<String, Object>> getCompleteStudentProfile(@PathVariable Long usuarioId) {
-        try {
-            UserDTO userDTO = userService.getUserById(usuarioId);
-            StudentProfileDTO studentProfile = studentProfileService.getProfileByUserId(usuarioId);
+        UserDTO userDTO = userService.getUserById(usuarioId);
+        StudentProfileDTO studentProfile = studentProfileService.getProfileByUserId(usuarioId);
 
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("email", userDTO.getEmail());
-            response.put("nombre", userDTO.getFirstName());
-            response.put("apellido", userDTO.getLastName());
-            response.put("telefono", userDTO.getPhone());
-            response.put("institucion", studentProfile.getInstitution());
-            response.put("carrera", studentProfile.getCareer());
-            response.put("semestre", studentProfile.getSemester());
-            response.put("descripcion", studentProfile.getDescription());
-            response.put("intereses", studentProfile.getInterests());
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("message", "Perfil de estudiante no encontrado para el usuario con ID: " + usuarioId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        } catch (Exception e) {
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("message", "Error al obtener el perfil de estudiante");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-
-
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("email", userDTO.getEmail());
+        response.put("nombre", userDTO.getFirstName());
+        response.put("apellido", userDTO.getLastName());
+        response.put("telefono", userDTO.getPhone());
+        response.put("institucion", studentProfile.getInstitution());
+        response.put("carrera", studentProfile.getCareer());
+        response.put("semestre", studentProfile.getSemester());
+        response.put("descripcion", studentProfile.getDescription());
+        response.put("intereses", studentProfile.getInterests());
+        return ResponseEntity.ok(response);
     }
 
     // obtener perfil completo de un usuario (ciudadano, estudiante, investigador)
     @GetMapping("/perfil-completo-investigador/{usuarioId}")
 
     public ResponseEntity<HashMap<String, Object>> getCompleteResearcherProfile(@PathVariable Long usuarioId) {
-        try {
-            UserDTO userDTO = userService.getUserById(usuarioId);
-            ResearcherProfileDTO researcherProfile = perfilInvestigadorService.obtenerPerfilPorUsuarioId(usuarioId);
+        UserDTO userDTO = userService.getUserById(usuarioId);
+        ResearcherProfileDTO researcherProfile = researcherProfileService.getProfileByID(usuarioId);
 
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("email", userDTO.getEmail());
-            response.put("nombre", userDTO.getFirstName());
-            response.put("apellido", userDTO.getLastName());
-            response.put("telefono", userDTO.getPhone());
-            response.put("institucion", researcherProfile.getInstitution());
-            response.put("area_investigacion", researcherProfile.getResearchArea());
-            response.put("descripcion", researcherProfile.getDescription());
-            response.put("intereses", researcherProfile.getIntereses());
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("message", "Perfil de investigador no encontrado para el usuario con ID: " + usuarioId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        } catch (Exception e) {
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("message", "Error al obtener el perfil de investigador");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("email", userDTO.getEmail());
+        response.put("nombre", userDTO.getFirstName());
+        response.put("apellido", userDTO.getLastName());
+        response.put("telefono", userDTO.getPhone());
+        response.put("institucion", researcherProfile.getInstitution());
+        response.put("area_investigacion", researcherProfile.getResearchArea());
+        response.put("descripcion", researcherProfile.getDescription());
+        response.put("intereses", researcherProfile.getInterests());
+        return ResponseEntity.ok(response);
     }
 
     // -------------------
@@ -251,33 +211,13 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            String token = userService.login(request.getEmail(), request.getPassword());
-            UserDTO userDTO = userService.getUserByEmail(request.getEmail());
-            AuthResponse response = new AuthResponse();
-            response.setToken(token);
-            response.setTipoUsuario(userDTO.getUserType());
-            response.setUsuarioId(userDTO.getId());
-            response.setNombre(userDTO.getFirstName());
-            return ResponseEntity.ok(response);
-
-     } catch (RuntimeException e) {
-      if (e.getMessage().equals("Usuario no encontrado")) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new AuthResponse());
-        } else if (e.getMessage().equals("Contraseña incorrecta")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponse());
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthResponse());
-      }
-        }
-
-
-
-
-
-
-}
+        String token = userService.login(request.getEmail(), request.getPassword());
+        UserDTO userDTO = userService.getUserByEmail(request.getEmail());
+        AuthResponse response = new AuthResponse();
+        response.setToken(token);
+        response.setTipoUsuario(userDTO.getUserType());
+        response.setUsuarioId(userDTO.getId());
+        response.setNombre(userDTO.getFirstName());
+        return ResponseEntity.ok(response);
+     }
 }

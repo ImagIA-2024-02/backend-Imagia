@@ -5,7 +5,9 @@ import com.acme.backendimagia.domain.model.UserType;
 import com.acme.backendimagia.domain.model.User;
 import com.acme.backendimagia.domain.repository.UserRepository;
 import com.acme.backendimagia.interfaces.persistence.exception.NotFoundException;
+import com.acme.backendimagia.shared.exception.BusinessExceptions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,34 +16,37 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public UserDTO registerUser(UserDTO userDTO) {
-        User nuevoUser = new User();
-        nuevoUser.setEmail(userDTO.getEmail());
-        nuevoUser.setFirstName(userDTO.getFirstName());
-        nuevoUser.setLastName(userDTO.getLastName());
-        nuevoUser.setPhone(userDTO.getPhone());
-        nuevoUser.setPassword(userDTO.getPassword());
+        User newUser = new User();
+        newUser.setEmail(userDTO.getEmail());
+        newUser.setFirstName(userDTO.getFirstName());
+        newUser.setLastName(userDTO.getLastName());
+        newUser.setPhone(userDTO.getPhone());
+        newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
         try {
-            nuevoUser.setUserType(UserType.valueOf(userDTO.getUserType().toUpperCase()));
+            newUser.setUserType(UserType.valueOf(userDTO.getUserType().toUpperCase()));
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Tipo de usuario inválido.");
+            throw new BusinessExceptions.BadRequestException("Tipo de usuario inválido.");
         }
 
-        User savedUser = userRepository.save(nuevoUser);
+        User savedUser = userRepository.save(newUser);
         return mapToDTO(savedUser);
     }
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessExceptions.ResourceNotFoundException("Usuario no encontrado"));
 
         return mapToDTO(user);
     }
     // Actualizar un usuario
     public void updateUser(UserDTO userDTO) {
         User existingUser = userRepository.findById(userDTO.getId())
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessExceptions.ResourceNotFoundException("Usuario no encontrado"));
 
         existingUser.setEmail(userDTO.getEmail());
         existingUser.setFirstName(userDTO.getFirstName());
@@ -59,15 +64,15 @@ public class UserService {
 
     public String login(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-        if (!user.getPassword().equals(password)) {
-            throw new IllegalArgumentException("Contraseña incorrecta");
+                .orElseThrow(() -> new BusinessExceptions.ResourceNotFoundException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BusinessExceptions.UnauthorizedException("Contraseña incorrecta");
         }
         return "Sesión iniciada";
     }
     public UserDTO getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessExceptions.ResourceNotFoundException("Usuario no encontrado"));
         return mapToDTO(user);
     }
 

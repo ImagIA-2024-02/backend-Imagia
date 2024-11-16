@@ -4,6 +4,7 @@ import com.acme.backendimagia.application.artwork_recognition.ArtworkService;
 import com.acme.backendimagia.application.dto.ArtworkDTO;
 import com.acme.backendimagia.application.dto.UserDTO;
 import com.acme.backendimagia.application.user_management.UserService;
+import com.acme.backendimagia.shared.exception.BusinessExceptions;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,26 +26,16 @@ public class ArtworkController {
 
     @PostMapping()
     public ResponseEntity<Map<String, Object>> registerArtwork(@Valid @RequestBody ArtworkDTO artworkDTO) {
-        Map<String, Object> response = new HashMap<>();
-
-        // Verificar si el usuario existe
+        // Verificar si el usuario existe - userService lanzará ResourceNotFoundException si no existe
         UserDTO user = userService.getUserById(artworkDTO.getUserId());
-        if (user == null) {
-            response.put("message", "Usuario no encontrado");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
 
         // Crear y guardar la obra de arte
-        try {
-            artworkService.createArtwork(artworkDTO);
-            response.put("message", "Obra de arte registrada correctamente");
-            response.put("obraDeArte", artworkDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            response.put("message", "Error al registrar la obra de arte");
-            response.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        artworkService.createArtwork(artworkDTO);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Obra de arte registrada correctamente");
+        response.put("obraDeArte", artworkDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{obraId}")
@@ -58,6 +49,9 @@ public class ArtworkController {
     @GetMapping("/{obraId}")
     public ResponseEntity<ArtworkDTO> getArtworkById(@PathVariable Long obraId) {
         ArtworkDTO artworkDTO = artworkService.getArtworkById(obraId);
+        if (artworkDTO == null) {
+            throw new BusinessExceptions.ResourceNotFoundException("Obra de arte no encontrada con ID: " + obraId);
+        }
         return ResponseEntity.ok(artworkDTO);
     }
 
@@ -76,8 +70,9 @@ public class ArtworkController {
     @GetMapping("/nombre/{nombre}")
     public ResponseEntity<ArtworkDTO> getArtworkByName(@PathVariable String nombre) {
         ArtworkDTO artworkDTO = artworkService.getArtworkByName(nombre);
+        if (artworkDTO == null) {
+            throw new BusinessExceptions.ResourceNotFoundException("Obra de arte no encontrada con nombre: " + nombre);
+        }
         return ResponseEntity.ok(artworkDTO);
     }
-
-
 }

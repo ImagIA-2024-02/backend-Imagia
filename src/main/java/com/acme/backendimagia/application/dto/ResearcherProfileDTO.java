@@ -21,5 +21,5 @@ public class ResearcherProfileDTO {
 
     private String description;
 
-    private String intereses;
+    private String interests;
 }

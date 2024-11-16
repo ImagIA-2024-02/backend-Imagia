@@ -6,6 +6,7 @@ import com.acme.backendimagia.domain.model.UserType;
 import com.acme.backendimagia.domain.model.User;
 import com.acme.backendimagia.domain.repository.CitizenProfileRepository;
 import com.acme.backendimagia.domain.repository.UserRepository;
+import com.acme.backendimagia.shared.exception.BusinessExceptions;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class CitizenProfileService {
     public CitizenProfileDTO getProfileByUserId(Long userId) {
         CitizenProfile profile = citizenProfileRepository.findByUserId(userId);
         if (profile == null) {
-            throw new RuntimeException("Perfil de ciudadano no encontrado para el usuario con ID: " + userId);
+            throw new BusinessExceptions.ResourceNotFoundException("Perfil de ciudadano no encontrado para el usuario con ID: " + userId);
         }
         return mapToDTO(profile);
     }
@@ -31,7 +32,7 @@ public class CitizenProfileService {
     public void updateProfile(CitizenProfileDTO profileDTO) {
         CitizenProfile profile = citizenProfileRepository.findByUserId(profileDTO.getUserId());
         if (profile == null) {
-            throw new RuntimeException("Perfil de ciudadano no encontrado para el usuario con ID: " + profileDTO.getUserId());
+            throw new BusinessExceptions.ResourceNotFoundException("Perfil de ciudadano no encontrado para el usuario con ID: " + profileDTO.getUserId());
         }
 
         profile.setInterests(profileDTO.getInterests());
@@ -46,9 +47,9 @@ public class CitizenProfileService {
     @Transactional
     public void createCitizenProfile(CitizenProfileDTO profileDTO) {
         User user = userRepository.findById(profileDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + profileDTO.getUserId()));
+                .orElseThrow(() -> new BusinessExceptions.ResourceNotFoundException("Usuario no encontrado con ID: " + profileDTO.getUserId()));
         if (user.getUserType() != UserType.CIUDADANO) {
-            throw new IllegalArgumentException("El usuario con ID " + profileDTO.getUserId() + " no es un ciudadano.");
+            throw new BusinessExceptions.BadRequestException("El usuario con ID " + profileDTO.getUserId() + " no es un ciudadano.");
         }
 
         CitizenProfile perfil = new CitizenProfile();
